@@ -16,7 +16,7 @@ const SignUp = ({ onSignUp }) => {
             const response = await axios.post('http://localhost:8080/signup', { firstname, lastname, email, password });
             localStorage.setItem('token', response.data.token);
             onSignUp();
-            navigate('/home'); 
+            navigate('/login'); 
         } catch (error) {
             setMessage(error.response?.data?.message || 'An error occurred');
         }

@@ -104,11 +104,14 @@ const Sheeteditor = () => {
         reader.readAsArrayBuffer(file);
     };
 
-  const handleFilter = () => {
-    const filteredData = data.map(row => row.filter(cell => cell.value.includes(filterValue)));
-    setData(filteredData);
-    setDialogOpen(false);
-  };
+    const handleFilter = () => {
+        const filteredData = data.filter(row => 
+          row.some(cell => cell.value.includes(filterValue))
+        );
+        setData(filteredData);
+        setDialogOpen(false);
+      };
+      
 
     const handleSort = () => {
         let sortedData;

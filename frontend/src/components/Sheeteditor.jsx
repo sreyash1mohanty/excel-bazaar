@@ -23,6 +23,13 @@ import BorderColorIcon from '@mui/icons-material/BorderColor';
 import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
 import TextRotationAngleupIcon from '@mui/icons-material/TextRotationAngleup';
 import * as XLSX from 'xlsx'; 
+import io from "socket.io-client";
+
+const socket = io("http://localhost:8080");
+
+
+
+
 const createGrid = (rows, cols) => {
   const grid = [];
   for (let i = 0; i < rows; i++) {
@@ -51,34 +58,49 @@ const Sheeteditor = () => {
     const [selectedCell, setSelectedCell] = useState({ row: null, col: null });
     const { id: sheetId } = useParams();
     
-    useEffect(() => {
-        axios.get(`http://localhost:8080/sheets/${sheetId}`)
-        .then(response => {
-            setData(  response.data.data  || createGrid(20, 15)    );
-            setLoading(false);
-        })
-        .catch(error => {
-            console.error('Error fetching sheet data:', error);
-            setError('Failed to load the spreadsheet data.');
-            setLoading(false);
-        }); 
-    }, [sheetId]);
+        useEffect(() => {
+  
+          socket.emit("joinSheet", sheetId);
+          socket.on("updateSheet", (updatedData) => {
+            console.log("Sheet updated:", updatedData);
+            setData(updatedData); 
+          });
+
+          axios
+            .get(`http://localhost:8080/sheets/${sheetId}`)
+            .then((response) => {
+              setData(response.data.data || createGrid(20, 15));
+              setLoading(false);
+            })
+            .catch((error) => {
+              console.error("Error fetching sheet data:", error);
+              setError("Failed to load the spreadsheet data.");
+              setLoading(false);
+            });
+
+          return () => {
+            socket.off("updateSheet"); 
+          };
+        }, [sheetId]);
+  
+  
     const handleCellClick = (row, col) => {
         setSelectedCell({ row, col });
       };
       
 
     const handleSave = async () => {
-        setSaving(true);
-        try {
+      setSaving(true);
+      try {
         await axios.put(`http://localhost:8080/sheets/${sheetId}`, { data });
-        alert('Sheet saved successfully');
-        } catch (error) {
-        console.error('Error saving sheet:', error);
-        setError('Failed to save the spreadsheet.');
-        } finally {
+        alert("Sheet saved successfully");
+        socket.emit("sheetUpdated", { sheetId, data });
+      } catch (error) {
+        console.error("Error saving sheet:", error);
+        setError("Failed to save the spreadsheet.");
+      } finally {
         setSaving(false);
-        }
+      }
     };
 
     const handleExport = () => {
